@@ -3,11 +3,11 @@
 #include <stdlib.h>
 #include <dirent.h>
 #include <string.h>
-#include <errno.h>
 #include <sys/stat.h>
 #include <pwd.h>
 #include <grp.h>
 #include <time.h>
+#include <unistd.h>
 
 #define MAX_FILES 1000
 #define NAME_LEN 256
@@ -19,22 +19,37 @@ int compare_names(const void *a, const void *b)
     return strcmp(name_a, name_b);
 }
 
-
-const char *color_name(const char *name)
+const char *color_name(const char *path, const char *name)
 {
     static char result[1024];
     struct stat st;
+    const char *color = "\033[0m";
 
-    if (lstat(name, &st) == -1)
+    if (lstat(path, &st) == -1)
         return name;
 
-    const char *color = "\033[0m";
-    if (S_ISDIR(st.st_mode))
+    if (S_ISLNK(st.st_mode)) {
+        color = "\033[1;35m";
+    } else if (S_ISDIR(st.st_mode)) {
         color = "\033[1;34m";
-    else if (S_ISLNK(st.st_mode))
-        color = "\033[1;36m";
-    else if (st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH))
-        color = "\033[1;32m";
+    } else if (S_ISCHR(st.st_mode) || S_ISBLK(st.st_mode) ||
+               S_ISFIFO(st.st_mode) || S_ISSOCK(st.st_mode)) {
+        color = "\033[7m";
+    } else if (S_ISREG(st.st_mode)) {
+        size_t len = strlen(name);
+
+        if ((st.st_mode & (S_IXUSR | S_IXGRP | S_IXOTH)) != 0) {
+            color = "\033[1;32m";
+        } else if ((len >= 4 && strcmp(name + len - 4, ".tar") == 0) ||
+                   (len >= 7 && strcmp(name + len - 7, ".tar.gz") == 0) ||
+                   (len >= 4 && strcmp(name + len - 4, ".tgz") == 0) ||
+                   (len >= 4 && strcmp(name + len - 4, ".zip") == 0) ||
+                   (len >= 3 && strcmp(name + len - 3, ".gz") == 0) ||
+                   (len >= 4 && strcmp(name + len - 4, ".bz2") == 0) ||
+                   (len >= 3 && strcmp(name + len - 3, ".xz") == 0)) {
+            color = "\033[1;31m";
+        }
+    }
 
     snprintf(result, sizeof(result), "%s%s\033[0m", color, name);
     return result;
@@ -64,7 +79,8 @@ int main(int argc, char *argv[])
         for (int i = 0; i < dir_count; i++) {
             printf("Directory listing of %s:\n", dirs[i]);
             do_ls(dirs[i], long_format, horizontal);
-            printf("\n");
+            if (i + 1 < dir_count)
+                printf("\n");
         }
     }
 
@@ -110,8 +126,11 @@ void do_ls(const char *dir, int long_format, int horizontal)
                 else
                     index = col * rows + row;
 
-                if (index < count)
-                    printf("%-25s", names[index]);
+                if (index < count) {
+                    char path[4096];
+                    snprintf(path, sizeof(path), "%s/%s", dir, names[index]);
+                    printf("%-25s", color_name(path, names[index]));
+                }
             }
             printf("\n");
         }
@@ -123,9 +142,9 @@ void do_ls(const char *dir, int long_format, int horizontal)
         char perms[11];
         char timebuf[80];
         struct stat info;
+        struct tm *tm_info;
         struct passwd *pw;
         struct group *gr;
-        struct tm *tm_info;
 
         snprintf(path, sizeof(path), "%s/%s", dir, names[i]);
 
@@ -138,6 +157,14 @@ void do_ls(const char *dir, int long_format, int horizontal)
             perms[0] = 'd';
         else if (S_ISLNK(info.st_mode))
             perms[0] = 'l';
+        else if (S_ISFIFO(info.st_mode))
+            perms[0] = 'p';
+        else if (S_ISCHR(info.st_mode))
+            perms[0] = 'c';
+        else if (S_ISBLK(info.st_mode))
+            perms[0] = 'b';
+        else if (S_ISSOCK(info.st_mode))
+            perms[0] = 's';
         else
             perms[0] = '-';
 
@@ -165,6 +192,7 @@ void do_ls(const char *dir, int long_format, int horizontal)
                perms, (unsigned long)info.st_nlink,
                pw ? pw->pw_name : "unknown",
                gr ? gr->gr_name : "unknown",
-               (long)info.st_size, timebuf, names[i]);
+               (long)info.st_size, timebuf,
+               color_name(path, names[i]));
     }
 }

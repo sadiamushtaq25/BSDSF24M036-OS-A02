@@ -1,26 +1,41 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
 
-all: bin/ls
+TARGETS = bin/ls \
+          bin/ls-v1.1.0 \
+          bin/ls-v1.2.0 \
+          bin/ls-v1.3.0 \
+          bin/ls-v1.4.0 \
+          bin/ls-v1.5.0 \
+          bin/ls-v1.6.0
 
-bin/ls: src/ls-v1.0.0.c
-	$(CC) $(CFLAGS) src/ls-v1.0.0.c -o bin/ls
+.PHONY: all clean
 
-bin/ls-v1.1.0: src/ls-v1.1.0.c
-	$(CC) $(CFLAGS) src/ls-v1.1.0.c -o bin/ls-v1.1.0
+all: $(TARGETS)
+
+bin:
+	mkdir -p bin
+
+bin/ls: src/ls-v1.0.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
+
+bin/ls-v1.1.0: src/ls-v1.1.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
+
+bin/ls-v1.2.0: src/ls-v1.2.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
+
+bin/ls-v1.3.0: src/ls-v1.3.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
+
+bin/ls-v1.4.0: src/ls-v1.4.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
+
+bin/ls-v1.5.0: src/ls-v1.5.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
+
+bin/ls-v1.6.0: src/ls-v1.6.0.c | bin
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f bin/ls bin/ls-v1.1.0 bin/ls-v1.2.0 bin/ls-v1.3.0 bin/ls-v1.4.0 bin/ls-v1.5.0 bin/ls-v1.6.0
-bin/ls-v1.2.0: src/ls-v1.2.0.c
-	$(CC) $(CFLAGS) src/ls-v1.2.0.c -o bin/ls-v1.2.0
-bin/ls-v1.3.0: src/ls-v1.3.0.c
-	$(CC) $(CFLAGS) src/ls-v1.3.0.c -o bin/ls-v1.3.0
-
-bin/ls-v1.4.0: src/ls-v1.4.0.c
-	$(CC) $(CFLAGS) src/ls-v1.4.0.c -o bin/ls-v1.4.0
-
-bin/ls-v1.5.0: src/ls-v1.5.0.c
-	$(CC) $(CFLAGS) src/ls-v1.5.0.c -o bin/ls-v1.5.0
-
-bin/ls-v1.6.0: src/ls-v1.6.0.c
-	$(CC) $(CFLAGS) src/ls-v1.6.0.c -o bin/ls-v1.6.0
+	rm -f $(TARGETS)

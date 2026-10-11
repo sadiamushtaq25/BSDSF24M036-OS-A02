@@ -52,14 +52,27 @@ int main(int argc, char *argv[])
     int dir_count = 0;
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-l") == 0)
-            long_format = 1;
-        else if (strcmp(argv[i], "-x") == 0)
-            horizontal = 1;
-        else if (strcmp(argv[i], "-R") == 0)
-            recursive = 1;
-        else
+        if (argv[i][0] == '-' && argv[i][1] != '\0') {
+            int valid_options = 1;
+
+            for (int j = 1; argv[i][j] != '\0'; j++) {
+                if (argv[i][j] == 'l')
+                    long_format = 1;
+                else if (argv[i][j] == 'x')
+                    horizontal = 1;
+                else if (argv[i][j] == 'R')
+                    recursive = 1;
+                else
+                    valid_options = 0;
+            }
+
+            if (!valid_options) {
+                fprintf(stderr, "Unknown option: %s\\n", argv[i]);
+                return 1;
+            }
+        } else {
             dirs[dir_count++] = argv[i];
+        }
     }
 
     if (dir_count == 0) {
