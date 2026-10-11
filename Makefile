@@ -1,13 +1,13 @@
-
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11 -g
-TARGET = bin/ls
-SOURCE = src/ls-v1.0.0.c
 
-all: $(TARGET)
+all: bin/ls
 
-$(TARGET): $(SOURCE)
-	$(CC) $(CFLAGS) $(SOURCE) -o $(TARGET)
+bin/ls: src/ls-v1.0.0.c
+	$(CC) $(CFLAGS) src/ls-v1.0.0.c -o bin/ls
+
+bin/ls-v1.1.0: src/ls-v1.1.0.c
+	$(CC) $(CFLAGS) src/ls-v1.1.0.c -o bin/ls-v1.1.0
 
 clean:
-	rm -f $(TARGET)
+	rm -f bin/ls bin/ls-v1.1.0
